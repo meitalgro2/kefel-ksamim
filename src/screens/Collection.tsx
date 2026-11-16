@@ -22,12 +22,12 @@ export default function Collection() {
         <div>
           <h2>{dragon.name}: {STAGE_NAMES[stage]}</h2>
           <p className="muted">
-            {nextStageAt ? `עוד ${nextStageAt - days} ימי אימון והוא יגדל!` : 'הדרקון הגיע לשיא הכוח!'}
+            {nextStageAt ? (nextStageAt - days === 1 ? "עוד יום אימון אחד והוא יגדל!" : `עוד ${nextStageAt - days} ימי אימון והוא יגדל!`) : 'הדרקון הגיע לשיא הכוח!'}
           </p>
         </div>
       </div>
       <h2 className="section-title">מפלצות ({have.size}/{MONSTERS.length})</h2>
-      {have.size < MONSTERS.length && <p className="muted">עוד {toNext} כוכבים למפלצת הבאה</p>}
+      {have.size < MONSTERS.length && <p className="muted">{toNext === 1 ? "עוד כוכב אחד למפלצת הבאה" : `עוד ${toNext} כוכבים למפלצת הבאה`}</p>}
       <div className="monster-grid">
         {MONSTERS.map((m) => {
           const got = have.has(m.id);

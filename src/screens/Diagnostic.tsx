@@ -35,6 +35,8 @@ export default function Diagnostic() {
   }, []);
 
   const begin = async () => {
+    if (busy) return;
+    setBusy(true);
     let s = existing ?? null;
     let res: DiagResult[] = [];
     if (s) res = st!.attempts.filter((a) => a.session_id === s!.id).map((a) => ({ factId: a.fact_id, correct: a.correct }));
@@ -46,6 +48,7 @@ export default function Diagnostic() {
     setResults(res);
     if (ask(res)) setPhase('ask');
     else await end(s);
+    setBusy(false);
   };
 
   const end = async (s: Session) => {
@@ -84,7 +87,7 @@ export default function Diagnostic() {
           <p><b>היי {child.nickname}!</b> אני {dragon.name}.</p>
           <p>בואו נראה מה כבר יודעים. אין פה ציון ואין טעויות “רעות”. אם עוד לא למדת תרגיל, פשוט לוחצים “עוד לא למדתי”.</p>
         </div>
-        <button className="btn btn-primary btn-xl" onClick={begin}>{existing ? 'ממשיכים מאיפה שעצרנו' : 'יאללה, מתחילים'}</button>
+        <button className="btn btn-primary btn-xl" disabled={busy} onClick={begin}>{existing ? 'ממשיכים מאיפה שעצרנו' : 'יאללה, מתחילים'}</button>
       </section>
     );
 

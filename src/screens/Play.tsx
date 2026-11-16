@@ -58,9 +58,14 @@ export default function Play({ type, table }: { type: Exclude<SessionType, 'diag
     shownAt.current = performance.now();
     if (fact && s.child.settings.readAloud && s.child.age_band === '5-7') speak(`${fact.a} כפול ${fact.b}`);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [idx, queue.length]);
+  }, [idx]);
 
+  const pending = useRef<Promise<unknown>>(Promise.resolve());
+  const finishing = useRef(false);
   const finish = useCallback(async () => {
+    if (finishing.current) return;
+    finishing.current = true;
+    await pending.current; // never close the session while an answer is still being saved
     const ses = session.current;
     if (!ses) return go({ name: 'home' });
     await finishSession(s, ses);
@@ -84,7 +89,9 @@ export default function Play({ type, table }: { type: Exclude<SessionType, 'diag
     if (!session.current) return;
     setBusy(true);
     setPicked(value);
-    const res = await submitAnswer(s, session.current, item, value, hintUsed, performance.now() - shownAt.current, attemptId.current);
+    const save = submitAnswer(s, session.current, item, value, hintUsed, performance.now() - shownAt.current, attemptId.current);
+    pending.current = save.catch(() => undefined);
+    const res = await save;
     setSessionStars((x) => x + res.stars);
     const needRetry = (!res.correct || hintUsed) && !retried.current.has(fact.canonical_key);
     if (needRetry) {
@@ -121,7 +128,7 @@ export default function Play({ type, table }: { type: Exclude<SessionType, 'diag
   return (
     <section className="screen play">
       <div className="play-top">
-        <button className="btn btn-small" onClick={finish} aria-label="סיום האימון">סיום</button>
+        <button className="btn btn-small" disabled={busy} onClick={finish} aria-label="סיום האימון">סיום</button>
         <span className="play-title">{title}</span>
         <span className="star-pill"><Star /> {sessionStars}</span>
       </div>

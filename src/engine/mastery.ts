@@ -16,6 +16,7 @@ export type ChildFact = {
   lapse_count: number;
   preferred_strategy_id: string | null;
   updated_at: number;
+  last_fail_date?: string | null; // YYYY-MM-DD of last wrong/hinted answer
 };
 
 export type AttemptInput = { mode: 'choice' | 'typed'; correct: boolean; hint_used: boolean };
@@ -52,6 +53,15 @@ export function isDue(cf: ChildFact, now: Date): boolean {
   return cf.next_due_at !== null && cf.next_due_at <= now.getTime();
 }
 
+/**
+ * A genuine delayed review: the fact is at a review stage, is due, and was not
+ * already seen today (so an in-session retry after a lapse can never count).
+ */
+export function isScheduledReview(cf: ChildFact, now: Date): boolean {
+  const failedToday = cf.last_fail_date === dateKey(now);
+  return cf.mastery_level >= 2 && isDue(cf, now) && !failedToday;
+}
+
 function withStatus(cf: ChildFact, status: Status): ChildFact {
   const level = STATUSES.indexOf(status);
   return { ...cf, status, mastery_level: level, confidence: Math.max(0, (level - 1) / 4) };
@@ -69,6 +79,7 @@ export function applyAttempt(
 
   // Failure: wrong answer (any mode) or a hint was used.
   if (!a.correct || a.hint_used) {
+    next.last_fail_date = dateKey(now);
     if (cf.status === 'unseen' || cf.status === 'learning') {
       next = withStatus(next, 'learning');
       next.next_due_at = today.getTime();
@@ -99,8 +110,8 @@ export function applyAttempt(
     return { cf: next, lapse: false, advanced: true };
   }
 
-  if (!isDue(cf, now)) {
-    // Early success: never shortens or skips the schedule.
+  if (!isScheduledReview(cf, now)) {
+    // Early success, or a same-day retry after a lapse: never shortens or skips the schedule.
     return { cf: next, lapse: false, advanced: false };
   }
 

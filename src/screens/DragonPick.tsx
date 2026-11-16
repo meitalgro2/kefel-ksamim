@@ -5,7 +5,7 @@ import { Child } from '../engine/types';
 import { DRAGONS, Dragon } from '../ui/art';
 
 export default function DragonPick({ childId, fromParent }: { childId: string; fromParent?: boolean }) {
-  const { go, selectChild } = useApp();
+  const { go, selectChild, st } = useApp();
   const [child, setChild] = useState<Child | null>(null);
   const [pick, setPick] = useState<string>('ember');
   useEffect(() => {
@@ -21,7 +21,8 @@ export default function DragonPick({ childId, fromParent }: { childId: string; f
 
   const save = async () => {
     await repo.saveChild({ ...child, avatar_id: pick });
-    await selectChild(child.id);
+    // from the parent area, only refresh if this is the active player; never switch players
+    if (!fromParent || st?.child.id === child.id) await selectChild(child.id);
     go({ name: fromParent ? 'parent' : child.settings.diagnosticDone ? 'home' : 'diagnostic' });
   };
 

@@ -54,7 +54,7 @@ export function hintFor(a: number, b: number): Hint {
   }
   if (has(9)) {
     const n = pick(9);
-    return make('ten_minus', [`קודם כפול 10: ${n} × 10 = ${n * 10}`, `מורידים ${n} אחד: ${n * 10} − ${n} = ${p}`]);
+    return make('ten_minus', [`קודם כפול 10: ${n} × 10 = ${n * 10}`, `מורידים ${n}: ${n * 10} − ${n} = ${p}`]);
   }
   if (has(4)) {
     const n = pick(4);

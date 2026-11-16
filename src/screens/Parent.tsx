@@ -6,6 +6,7 @@ import { parentStats, ParentStats } from '../engine/stats';
 import { hashPin, loadChildState, ChildState, totalStars } from '../game/play';
 import { Dragon, dragonById } from '../ui/art';
 import { Modal, PinPad, TopBar } from '../ui/common';
+import { InstallTip } from '../ui/InstallTip';
 import { STATUS_UI } from './TableMap';
 import { STATUSES } from '../engine/mastery';
 
@@ -131,7 +132,7 @@ export default function Parent() {
             <h2>הגדרות של {child.nickname}</h2>
             <label className="field">
               <span>כינוי</span>
-              <input defaultValue={child.nickname} maxLength={16} onBlur={(e) => e.target.value.trim() && updateChild({ nickname: e.target.value.trim() })} />
+              <input key={child.id} defaultValue={child.nickname} maxLength={16} onBlur={(e) => e.target.value.trim() && updateChild({ nickname: e.target.value.trim() })} />
             </label>
             <div className="field">
               <span>גיל</span>
@@ -160,6 +161,7 @@ export default function Parent() {
       <div className="card">
         <h2>גיבוי ופרטיות</h2>
         <p className="muted small">כל המידע שמור רק בטלפון הזה. כדאי להוריד גיבוי מדי פעם.</p>
+        <InstallTip />
         <button className="btn" onClick={download}>הורדת קובץ גיבוי</button>
         <label className="btn file-btn">
           שחזור מגיבוי

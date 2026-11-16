@@ -100,6 +100,17 @@ describe('selector', () => {
     expect(q2[4].kind).toBe('retry');
   });
 
+  it('retry near the end of a session is not asked immediately', () => {
+    const q = buildSession(new Map(), now, 0, 15, seeded(5)).slice(0, 4);
+    const last = q.length - 2; // only one item after the current one
+    const q2 = insertRetry(q, last, q[last].factId, () => 0.99);
+    expect(q2.some((i) => i.kind === 'retry')).toBe(false);
+    const q3 = insertRetry([...q, ...q, ...q].slice(0, 9), 2, q[2].factId, () => 0.99);
+    const at = q3.findIndex((i) => i.kind === 'retry');
+    expect(at - 2 - 1).toBeGreaterThanOrEqual(3);
+    expect(at - 2 - 1).toBeLessThanOrEqual(5);
+  });
+
   it('choice options: 4 unique, include answer, all positive', () => {
     for (const f of FACTS) {
       const o = choiceOptions(f, seeded(7));

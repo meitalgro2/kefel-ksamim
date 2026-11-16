@@ -4,6 +4,7 @@ import * as repo from '../db/repo';
 import { hashPin } from '../game/play';
 import { DRAGONS, Dragon } from '../ui/art';
 import { PinPad } from '../ui/common';
+import { InstallTip } from '../ui/InstallTip';
 
 export const CONSENT_VERSION = '2026-11-v1';
 
@@ -60,6 +61,7 @@ export default function Onboarding() {
             <li>אפשר למחוק את כל המידע בכל רגע, ממסך ההורים.</li>
             <li>כדאי לשמור גיבוי מדי פעם (גם הוא במסך ההורים), כי מחיקת האפליקציה מוחקת את ההתקדמות.</li>
           </ul>
+          <InstallTip />
           <label className="check">
             <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} />
             <span>אני ההורה ומאשר/ת שהילד שלי ישתמש באפליקציה</span>

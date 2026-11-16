@@ -82,13 +82,14 @@ function spread<T extends { key: string }>(items: T[], _rand: () => number): T[]
 
 /** Re-ask a missed fact after 3–5 other items (typed). Returns a new queue. */
 export function insertRetry(queue: SessionItem[], currentIndex: number, factId: string, rand: () => number = Math.random): SessionItem[] {
-  const gap = 3 + Math.floor(rand() * 3);
-  const pos = Math.min(queue.length, currentIndex + 1 + gap);
   const key = factById(factId).canonical_key;
   const q = [...queue];
   // drop a later duplicate of the same key so it isn't asked twice more
   for (let i = q.length - 1; i > currentIndex; i--) if (factById(q[i].factId).canonical_key === key) q.splice(i, 1);
-  q.splice(Math.min(pos, q.length), 0, { factId, mode: 'typed', kind: 'retry' });
+  const remaining = q.length - currentIndex - 1;
+  if (remaining < 3) return q; // not enough items in between: it returns next session instead
+  const gap = Math.min(remaining, 3 + Math.floor(rand() * 3));
+  q.splice(currentIndex + 1 + gap, 0, { factId, mode: 'typed', kind: 'retry' });
   return q;
 }
 

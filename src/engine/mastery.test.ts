@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { applyAttempt, newChildFact } from './mastery';
+import { applyAttempt, isScheduledReview, newChildFact } from './mastery';
 import { addDays, startOfDay } from './time';
 
 const day0 = new Date(2026, 10, 16, 17, 0, 0);
@@ -47,6 +47,30 @@ describe('mastery state machine', () => {
       expect(cf.next_due_at).toBe(addDays(startOfDay(at), days).getTime());
     }
     expect(cf.consecutive_delayed_successes).toBe(4);
+  });
+
+  it('a correct in-session retry right after a lapse does not climb back up', () => {
+    let cf = applyAttempt(newChildFact('c1', '7x8'), typedOk, day0).cf; // recall_1
+    cf = applyAttempt(cf, typedOk, new Date(cf.next_due_at! + 3600e3)).cf; // recall_2
+    cf = applyAttempt(cf, typedOk, new Date(cf.next_due_at! + 3600e3)).cf; // consolidating
+    const at = new Date(cf.next_due_at! + 3600e3);
+    cf = applyAttempt(cf, wrong, at).cf; // lapse -> recall_2
+    expect(cf.status).toBe('recall_2');
+    expect(isScheduledReview(cf, new Date(at.getTime() + 120e3))).toBe(false);
+    const r = applyAttempt(cf, typedOk, new Date(at.getTime() + 120e3));
+    expect(r.cf.status).toBe('recall_2');
+    expect(r.advanced).toBe(false);
+    // next day it can advance again
+    const r2 = applyAttempt(r.cf, typedOk, addDays(at, 1));
+    expect(r2.cf.status).toBe('consolidating');
+  });
+
+  it('seeing a due review in the choice game first does not block typed advancement that day', () => {
+    let cf = applyAttempt(newChildFact('c1', '7x8'), typedOk, day0).cf; // recall_1
+    const at = new Date(cf.next_due_at! + 3600e3);
+    cf = applyAttempt(cf, choiceOk, at).cf;
+    const r = applyAttempt(cf, typedOk, new Date(at.getTime() + 60e3));
+    expect(r.cf.status).toBe('recall_2');
   });
 
   it('acceptance 4: wrong answer schedules review and keeps history', () => {

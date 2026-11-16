@@ -1,5 +1,6 @@
 import { openDB, IDBPDatabase, DBSchema } from 'idb';
-import { ChildFact } from '../engine/mastery';
+import { ChildFact, STATUSES } from '../engine/mastery';
+import { CANONICAL_KEYS, FACTS } from '../engine/facts';
 import { Attempt, Child, Parent, Reward, Session } from '../engine/types';
 
 interface KefelDB extends DBSchema {
@@ -149,6 +150,7 @@ export async function importAll(raw: unknown): Promise<void> {
   for (const k of ['children', 'childFacts', 'attempts', 'sessions', 'rewards'] as const) {
     if (!Array.isArray(f[k])) throw new Error('invalid backup');
   }
+  validateBackup(f);
   const d = await db();
   const tx = d.transaction(['meta', 'children', ...CHILD_STORES], 'readwrite');
   await Promise.all(['meta', 'children', ...CHILD_STORES].map((s) => tx.objectStore(s as 'meta').clear()));
@@ -159,6 +161,26 @@ export async function importAll(raw: unknown): Promise<void> {
   for (const c of f.sessions) await tx.objectStore('sessions').put(c);
   for (const c of f.rewards) await tx.objectStore('rewards').put(c);
   await tx.done;
+}
+
+const FACT_IDS = new Set(FACTS.map((x) => x.id));
+const KEYS = new Set(CANONICAL_KEYS);
+const STATUS_SET = new Set<string>(STATUSES);
+
+/** Reject a backup whose records would crash the app (e.g. a hand-edited file). */
+function validateBackup(f: ExportFile) {
+  const bad = () => {
+    throw new Error('invalid backup');
+  };
+  const kids = new Set<string>();
+  for (const c of f.children) {
+    if (!c || typeof c.id !== 'string' || typeof c.nickname !== 'string' || !c.settings) bad();
+    kids.add(c.id);
+  }
+  for (const c of f.childFacts) if (!kids.has(c.child_id) || !KEYS.has(c.canonical_key) || !STATUS_SET.has(c.status)) bad();
+  for (const a of f.attempts) if (!kids.has(a.child_id) || !FACT_IDS.has(a.fact_id) || typeof a.id !== 'string') bad();
+  for (const s of f.sessions) if (!kids.has(s.child_id) || typeof s.id !== 'string') bad();
+  for (const r of f.rewards) if (!kids.has(r.child_id) || typeof r.id !== 'string') bad();
 }
 
 export async function wipeEverything() {

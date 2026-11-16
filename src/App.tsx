@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Ctx, Screen, lastChild, rememberChild } from './app-context';
 import * as repo from './db/repo';
 import { ChildState, loadChildState } from './game/play';
@@ -17,14 +17,20 @@ import Parent from './screens/Parent';
 export default function App() {
   const [screen, setScreen] = useState<Screen>({ name: 'loading' });
   const [st, setSt] = useState<ChildState | null>(null);
+  const activeId = useRef<string | null>(null);
 
   const selectChild = useCallback(async (id: string | null) => {
     rememberChild(id);
-    setSt(id ? await loadChildState(id) : null);
+    activeId.current = id;
+    const next = id ? await loadChildState(id) : null;
+    if (activeId.current === id) setSt(next);
   }, []);
 
   const reload = useCallback(async () => {
-    if (st) setSt(await loadChildState(st.child.id));
+    if (!st) return;
+    const id = st.child.id;
+    const next = await loadChildState(id);
+    if (activeId.current === id) setSt(next); // ignore if the player changed meanwhile
   }, [st]);
 
   useEffect(() => {
@@ -36,6 +42,7 @@ export default function App() {
       const last = lastChild();
       const pick = kids.find((k) => k.id === last) ?? (kids.length === 1 ? kids[0] : null);
       if (pick) {
+        activeId.current = pick.id;
         const s = await loadChildState(pick.id);
         setSt(s);
         return setScreen(s?.child.settings.diagnosticDone ? { name: 'home' } : { name: 'diagnostic' });

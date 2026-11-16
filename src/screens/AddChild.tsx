@@ -14,9 +14,11 @@ export default function AddChild() {
   const [nick, setNick] = useState('');
   const [band, setBand] = useState<AgeBand | null>(null);
   const clean = nick.trim().slice(0, 16);
+  const [saving, setSaving] = useState(false);
 
   const save = async () => {
-    if (!clean || !band) return;
+    if (!clean || !band || saving) return;
+    setSaving(true);
     const id = uid();
     await repo.saveChild({
       id, parent_id: 'parent', nickname: clean, age_band: band, avatar_id: 'ember', created_at: Date.now(),
@@ -31,7 +33,7 @@ export default function AddChild() {
         <h2>פרופיל חדש</h2>
         <label className="field">
           <span>כינוי במשחק</span>
-          <input value={nick} maxLength={16} onChange={(e) => setNick(e.target.value)} placeholder="למשל: אלוף הכפל" autoComplete="off" />
+          <input value={nick} maxLength={16} onChange={(e) => setNick(e.target.value)} placeholder="למשל: דרקון־על" autoComplete="off" />
           <small className="muted">רק כינוי, לא שם מלא.</small>
         </label>
         <div className="field">
@@ -45,7 +47,7 @@ export default function AddChild() {
           </div>
           <small className="muted">הגיל משנה רק את גודל הכתב והממשק. מסלול הלמידה נקבע לפי ההצלחות.</small>
         </div>
-        <button className="btn btn-primary btn-xl" disabled={!clean || !band} onClick={save}>להמשיך לבחירת דרקון</button>
+        <button className="btn btn-primary btn-xl" disabled={!clean || !band || saving} onClick={save}>להמשיך לבחירת דרקון</button>
       </div>
     </section>
   );

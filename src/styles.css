@@ -313,3 +313,5 @@ body.calm *, body.calm *::before, body.calm *::after { animation: none !importan
 }
 
 .ltr { direction: ltr; unicode-bidi: isolate; display: inline-block; white-space: nowrap; }
+.install-tip { background: #e6f3ff; border: 2px dashed var(--sky); border-radius: 16px; padding: 12px 14px; font-size: 0.9em; }
+.install-tip ul { margin: 6px 0; padding-inline-start: 1.2em; display: grid; gap: 4px; }

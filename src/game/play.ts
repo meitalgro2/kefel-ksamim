@@ -1,7 +1,7 @@
 // Glue between the learning engine, storage and the screens.
 import * as repo from '../db/repo';
 import { factById, factsForKey, tablesOfKey, CANONICAL_KEYS } from '../engine/facts';
-import { applyAttempt, ChildFact, isDue, newChildFact } from '../engine/mastery';
+import { applyAttempt, ChildFact, isDue, isScheduledReview, newChildFact } from '../engine/mastery';
 import { buildSession, newFactLimit, SessionItem } from '../engine/selector';
 import { Attempt, Child, Reward, Session, SessionType, uid } from '../engine/types';
 import { dateKey } from '../engine/time';
@@ -101,7 +101,7 @@ export async function submitAnswer(
   const fact = factById(item.factId);
   const correct = response === fact.answer;
   const before = st.cfs.get(fact.canonical_key) ?? newChildFact(st.child.id, fact.canonical_key, now.getTime());
-  const scheduled = before.mastery_level >= 2 && isDue(before, now);
+  const scheduled = isScheduledReview(before, now);
   const r = applyAttempt(before, { mode: item.mode, correct, hint_used: hintUsed }, now);
   const attempt: Attempt = {
     id: attemptId, child_id: st.child.id, fact_id: fact.id, session_id: session.id, timestamp: now.getTime(),

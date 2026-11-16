@@ -58,6 +58,9 @@ describe('repo', () => {
     await repo.recordAttempt(attempt('x1', 'a'), newChildFact('a', '7x8'));
     const backup = JSON.parse(JSON.stringify(await repo.exportAll()));
     await expect(repo.importAll({ hello: 1 })).rejects.toThrow();
+    const tampered = JSON.parse(JSON.stringify(backup));
+    tampered.attempts[0].fact_id = '11x99';
+    await expect(repo.importAll(tampered)).rejects.toThrow();
     expect(await repo.listChildren()).toHaveLength(1);
     await repo.deleteChild('a');
     await repo.importAll(backup);

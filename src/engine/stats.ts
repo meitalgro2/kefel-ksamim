@@ -31,7 +31,7 @@ export function parentStats(
     const indep = at.mode === 'typed' && at.correct && !at.hint_used;
     if (indep) independentKeys.add(key);
     if (indep && at.scheduled_review) delayedKeys.add(key);
-    if (!at.correct) wrongCount.set(key, (wrongCount.get(key) ?? 0) + 1);
+    if (!at.correct && at.response !== null) wrongCount.set(key, (wrongCount.get(key) ?? 0) + 1);
   }
   const knownNow = cfs.filter((c) => c.mastery_level >= 2).length;
   return {
@@ -42,7 +42,7 @@ export function parentStats(
       .filter(([, n]) => n >= 2)
       .sort((x, y) => y[1] - x[1])
       .map(([key, count]) => ({ key, count })),
-    pendingReviews: cfs.filter((c) => c.status !== 'unseen' && isDue(c, now)).length,
+    pendingReviews: cfs.filter((c) => c.mastery_level >= 2 && isDue(c, now)).length,
     trainingDays: days.size,
     changeSinceDiagnostic: knownNow - diagnosticBaseline,
     stars: sessions.reduce((s, x) => s + x.stars_earned, 0),
