@@ -1,5 +1,5 @@
 import { it, expect } from 'vitest';
-import { lastPracticeText, practiceSummary } from './practice';
+import { exercisesText, lastPracticeText, practiceSummary } from './practice';
 import { Attempt } from '../engine/types';
 
 const now = new Date(2026, 10, 16, 20, 0);
@@ -23,6 +23,14 @@ it('counts exercises and minutes per day for the last 7 days, ignoring long paus
   expect(p.weekExercises).toBe(8);
   expect(p.weekActiveDays).toBe(2);
   expect(p.totalExercises).toBe(9);
+});
+
+it('week minutes are summed before rounding', () => {
+  // three days with ~25 seconds each: per-day rounding would say 0
+  const list = [14, 15, 16].flatMap((d) => [0, 20].map((s) => at(new Date(2026, 10, d, 10, 0, s), `s${d}`)));
+  expect(practiceSummary(list, now).weekMinutes).toBe(1);
+  expect(exercisesText(1)).toBe('תרגיל אחד');
+  expect(exercisesText(4)).toBe('4 תרגילים');
 });
 
 it('last practice in plain Hebrew', () => {

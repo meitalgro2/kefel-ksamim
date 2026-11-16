@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { DayBar } from '../game/practice';
+import { DayBar, exercisesText, minutesText } from '../game/practice';
 
 /** Exercises per day, last 7 days. Tap a bar to see its numbers. Single series: no legend. */
 export function PracticeChart({ days }: { days: DayBar[] }) {
@@ -17,7 +17,7 @@ export function PracticeChart({ days }: { days: DayBar[] }) {
             role="listitem"
             className={`pchart-col ${i === sel ? 'on' : ''}`}
             onClick={() => setSel(i)}
-            aria-label={`${day.label}: ${day.exercises} תרגילים, ${day.minutes} דקות`}
+            aria-label={day.exercises ? `${day.label}: ${exercisesText(day.exercises)}, ${minutesText(day.minutes)}` : `${day.label}: לא תרגלו`}
           >
             <span className="pchart-val">{i === sel && day.exercises > 0 ? day.exercises : ''}</span>
             <span className="pchart-bar" style={{ height: `${(day.exercises / max) * 100}%` }} />
@@ -27,7 +27,7 @@ export function PracticeChart({ days }: { days: DayBar[] }) {
       </div>
       <p className="pchart-detail" role="status">
         <b>{d.label === 'היום' ? 'היום' : `יום ${d.label}`}:</b>{' '}
-        {d.exercises ? `${d.exercises} תרגילים · ${d.minutes < 1 ? 'פחות מדקה' : d.minutes === 1 ? 'דקה אחת' : `${d.minutes} דקות`}` : 'לא תרגלו'}
+        {d.exercises ? `${exercisesText(d.exercises)} · ${minutesText(d.minutes)}` : 'לא תרגלו'}
       </p>
     </figure>
   );

@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useApp } from '../app-context';
 import * as repo from '../db/repo';
 import { uid } from '../engine/types';
-import { bagsAvailable, cardRewards, cardRewardType, CardDef, drawCard, ownedCounts, SHINY_AT, CARDS } from '../game/cards';
+import { bagsAvailable, cardRewards, cardRewardType, CardDef, drawCard, lastCardId, ownedCounts, SHINY_AT, CARDS } from '../game/cards';
 import { totalStars } from '../game/play';
 import { SquishyCard } from '../ui/Squishy';
 import { TopBar } from '../ui/common';
@@ -14,24 +14,37 @@ export default function OpenBag() {
   const [card, setCard] = useState<CardDef | null>(null);
   const [copies, setCopies] = useState(0);
   const [, force] = useState(0);
+  const [failed, setFailed] = useState(false);
+  const lock = useRef(false);
+  const timer = useRef<ReturnType<typeof setTimeout>>();
+  useEffect(() => () => clearTimeout(timer.current), []);
   const left = bagsAvailable(totalStars(s), s.sessions, s.rewards);
   const owned = ownedCounts(s.rewards);
 
   const open = async () => {
-    if (phase !== 'bag' || left <= 0) return;
+    if (lock.current || phase !== 'bag' || left <= 0) return;
+    lock.current = true; // a double tap can never open two bags
+    setFailed(false);
     setPhase('tearing');
     const opened = cardRewards(s.rewards);
-    const last = opened.length ? opened[opened.length - 1].reward_type.slice(5) : null;
-    const c = drawCard(owned, opened.length, last);
+    const c = drawCard(owned, opened.length, lastCardId(s.rewards));
     const r = { id: uid(), child_id: s.child.id, reward_type: cardRewardType(c.id), earned_at: Date.now(), source_session_id: 'bag' };
-    await repo.addReward(r); // saved before the reveal, so closing the app can't lose it
+    try {
+      await repo.addReward(r); // saved before the reveal, so closing the app can't lose it
+    } catch {
+      lock.current = false;
+      setFailed(true);
+      setPhase('bag');
+      return;
+    }
     s.rewards.push(r);
     setCard(c);
     setCopies((owned.get(c.id) ?? 0) + 1);
-    setTimeout(() => setPhase('reveal'), s.child.settings.reduceMotion ? 50 : 700);
+    timer.current = setTimeout(() => setPhase('reveal'), s.child.settings.reduceMotion ? 50 : 700);
   };
 
   const again = () => {
+    lock.current = false;
     setPhase('bag');
     setCard(null);
     force((x) => x + 1);
@@ -42,14 +55,14 @@ export default function OpenBag() {
     : copies === 1
       ? card.rarity === 'legendary' ? 'וואו! סקווישי אגדי!!' : card.rarity === 'rare' ? 'יש! סקווישי נדיר!' : 'סקווישי חדש לאוסף!'
       : copies === SHINY_AT
-        ? `${card.name} הפך למבריק! ✨`
+        ? 'וואו! עכשיו זה סקווישי מבריק ✨'
         : copies < SHINY_AT
-          ? `עוד ${card.name}! עוד ${SHINY_AT - copies === 1 ? 'אחד' : SHINY_AT - copies} והוא יהיה מבריק ✨`
-          : `עוד ${card.name} מבריק לאוסף!`;
+          ? `עוד ${card.name}! ${SHINY_AT - copies === 1 ? 'עוד אחד וזה יהיה מבריק ✨' : `עוד ${SHINY_AT - copies} וזה יהיה מבריק ✨`}`
+          : `עוד ${card.name} לאוסף המבריק!`;
 
   return (
     <section className="screen bag-screen">
-      <TopBar title="שקית הפתעה" onBack={() => go({ name: 'collection' })} />
+      <TopBar title="שקית הפתעה" onBack={phase === 'tearing' ? undefined : () => go({ name: 'collection' })} />
       {phase !== 'reveal' ? (
         <div className="bag-stage">
           {left > 0 || phase === 'tearing' ? (
@@ -63,6 +76,7 @@ export default function OpenBag() {
                   <path d="M36 70 l6 -4 M120 150 l6 4 M126 70 l-5 -5" stroke="#fff" strokeWidth="5" strokeLinecap="round" />
                 </svg>
               </button>
+              {failed && <p className="error center-text" role="alert">אופס, השקית לא נפתחה. נסו שוב.</p>}
               <p className="center-text bag-hint">{phase === 'tearing' ? 'פותחים…' : 'לוחצים על השקית כדי לפתוח!'}</p>
               <p className="muted center-text">{left} {left === 1 ? 'שקית מחכה' : 'שקיות מחכות'}</p>
             </>

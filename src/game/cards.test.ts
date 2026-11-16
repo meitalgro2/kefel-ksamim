@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { bagsAvailable, bagsEarned, CARDS, cardRewardType, drawCard, ownedCounts, rollRarity } from './cards';
+import { bagsAvailable, bagsEarned, CARDS, cardRewardType, drawCard, lastCardId, ownedCounts, rollRarity } from './cards';
 import { Reward, Session } from '../engine/types';
 
 function seeded(seed = 1) {
@@ -57,6 +57,14 @@ describe('squishy cards', () => {
     expect(rollRarity(0.01)).toBe('legendary');
     expect(rollRarity(0.1)).toBe('rare');
     expect(rollRarity(0.5)).toBe('common');
+  });
+
+  it('last card is the most recently earned, regardless of storage order', () => {
+    const a = { ...reward('s01'), id: 'zzz', earned_at: 100 };
+    const b = { ...reward('r02'), id: 'aaa', earned_at: 300 };
+    const old = { ...reward('s05'), id: 'mmm', earned_at: 200 };
+    expect(lastCardId([a, b, old])).toBe('r02');
+    expect(lastCardId([])).toBeNull();
   });
 
   it('counts duplicate copies', () => {

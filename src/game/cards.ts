@@ -62,6 +62,13 @@ export function cardRewards(rewards: Reward[]): Reward[] {
   return rewards.filter((r) => r.reward_type.startsWith(CARD_PREFIX) && cardById(r.reward_type.slice(CARD_PREFIX.length)));
 }
 
+/** The card from the most recent bag (by earn time — storage order is random). */
+export function lastCardId(rewards: Reward[]): string | null {
+  let best: Reward | null = null;
+  for (const r of cardRewards(rewards)) if (!best || r.earned_at > best.earned_at) best = r;
+  return best ? best.reward_type.slice(CARD_PREFIX.length) : null;
+}
+
 export function cardRewardType(id: string) {
   return CARD_PREFIX + id;
 }

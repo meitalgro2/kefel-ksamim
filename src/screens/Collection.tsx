@@ -61,7 +61,7 @@ export default function Collection() {
             <p className="center-text">
               {RARITY_NAME[open.rarity]} · {(owned.get(open.id) ?? 0) >= SHINY_AT
                 ? 'מבריק ✨'
-                : (SHINY_AT - (owned.get(open.id) ?? 0) === 1 ? 'עוד עותק אחד והוא יהיה מבריק' : `עוד ${SHINY_AT - (owned.get(open.id) ?? 0)} עותקים והוא יהיה מבריק`)}
+                : (SHINY_AT - (owned.get(open.id) ?? 0) === 1 ? 'עוד עותק אחד וזה יהיה מבריק' : `עוד ${SHINY_AT - (owned.get(open.id) ?? 0)} עותקים וזה יהיה מבריק`)}
             </p>
             <button className="btn btn-primary" onClick={() => setOpen(null)}>סגירה</button>
           </div>

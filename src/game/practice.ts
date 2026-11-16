@@ -2,7 +2,7 @@
 import { addDays, dateKey, startOfDay } from '../engine/time';
 import { Attempt } from '../engine/types';
 
-export type DayBar = { date: string; label: string; exercises: number; minutes: number };
+export type DayBar = { date: string; label: string; exercises: number; minutes: number; ms: number };
 export type PracticeSummary = {
   days: DayBar[]; // last 7 days, oldest first
   weekExercises: number;
@@ -17,7 +17,7 @@ const MAX_GAP_MS = 2 * 60 * 1000; // a pause longer than 2 minutes isn't counted
 const PER_ANSWER_FLOOR_MS = 5000;
 
 /** Practice time = time between consecutive answers in the same session, ignoring long pauses. */
-function minutesFor(attempts: Attempt[]): number {
+function msFor(attempts: Attempt[]): number {
   const bySession = new Map<string, number[]>();
   for (const a of attempts) {
     const arr = bySession.get(a.session_id) ?? [];
@@ -30,7 +30,15 @@ function minutesFor(attempts: Attempt[]): number {
     ms += PER_ANSWER_FLOOR_MS; // the first answer took some time too
     for (let i = 1; i < ts.length; i++) ms += Math.min(MAX_GAP_MS, ts[i] - ts[i - 1]);
   }
-  return Math.round(ms / 60000);
+  return ms;
+}
+
+export function exercisesText(n: number): string {
+  return n === 1 ? 'תרגיל אחד' : `${n} תרגילים`;
+}
+
+export function minutesText(m: number): string {
+  return m < 1 ? 'פחות מדקה' : m === 1 ? 'דקה אחת' : `${m} דקות`;
 }
 
 export function practiceSummary(attempts: Attempt[], now: Date): PracticeSummary {
@@ -40,14 +48,15 @@ export function practiceSummary(attempts: Attempt[], now: Date): PracticeSummary
     const d = addDays(today, -i);
     const key = dateKey(d);
     const list = attempts.filter((a) => dateKey(new Date(a.timestamp)) === key);
-    days.push({ date: key, label: i === 0 ? 'היום' : WEEKDAY[d.getDay()], exercises: list.length, minutes: list.length ? minutesFor(list) : 0 });
+    const ms = list.length ? msFor(list) : 0;
+    days.push({ date: key, label: i === 0 ? 'היום' : WEEKDAY[d.getDay()], exercises: list.length, minutes: Math.round(ms / 60000), ms });
   }
   return {
     days,
     weekExercises: days.reduce((s, d) => s + d.exercises, 0),
-    weekMinutes: days.reduce((s, d) => s + d.minutes, 0),
+    weekMinutes: Math.round(days.reduce((s, d) => s + d.ms, 0) / 60000), // sum first, round once
     weekActiveDays: days.filter((d) => d.exercises > 0).length,
-    lastPractice: attempts.length ? Math.max(...attempts.map((a) => a.timestamp)) : null,
+    lastPractice: attempts.length ? attempts.reduce((m, a) => (a.timestamp > m ? a.timestamp : m), 0) : null,
     totalExercises: attempts.length,
   };
 }
