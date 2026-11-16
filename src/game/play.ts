@@ -138,31 +138,6 @@ export async function finishSession(st: ChildState, session: Session): Promise<v
   if (i >= 0) st.sessions[i] = { ...session };
 }
 
-export const STARS_PER_MONSTER = 10;
-
-/** Unlock every monster whose star threshold was reached. Returns the newly unlocked ids. */
-let rewardLock: Promise<unknown> = Promise.resolve();
-export function syncRewards(st: ChildState, monsterIds: string[], sourceSessionId: string): Promise<string[]> {
-  // serialize so two concurrent calls can never grant the same monster twice
-  const run = rewardLock.then(() => syncRewardsNow(st, monsterIds, sourceSessionId));
-  rewardLock = run.catch(() => undefined);
-  return run;
-}
-
-async function syncRewardsNow(st: ChildState, monsterIds: string[], sourceSessionId: string): Promise<string[]> {
-  const have = new Set(st.rewards.map((r) => r.reward_type));
-  const earned = Math.min(monsterIds.length, Math.floor(totalStars(st) / STARS_PER_MONSTER));
-  const fresh: string[] = [];
-  for (const id of monsterIds.slice(0, earned)) {
-    if (have.has(id)) continue;
-    const r: Reward = { id: uid(), child_id: st.child.id, reward_type: id, earned_at: Date.now(), source_session_id: sourceSessionId };
-    await repo.addReward(r);
-    st.rewards.push(r);
-    fresh.push(id);
-  }
-  return fresh;
-}
-
 export async function hashPin(pin: string): Promise<string> {
   const data = new TextEncoder().encode(`kefel:${pin}`);
   if (globalThis.crypto?.subtle) {

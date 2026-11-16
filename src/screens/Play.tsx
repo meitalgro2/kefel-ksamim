@@ -4,8 +4,8 @@ import { factById } from '../engine/facts';
 import { hintFor } from '../engine/hints';
 import { choiceOptions, insertRetry, SessionItem } from '../engine/selector';
 import { Session, SessionType, uid } from '../engine/types';
-import { finishSession, makeQueue, startSession, submitAnswer, syncRewards } from '../game/play';
-import { Dragon, dragonById, MONSTERS, Star } from '../ui/art';
+import { finishSession, makeQueue, startSession, submitAnswer } from '../game/play';
+import { Dragon, dragonById, Star } from '../ui/art';
 import { Keypad, SpeakButton, speak } from '../ui/common';
 import { parseAnswer } from '../ui/parseAnswer';
 import HintPanel from './HintPanel';
@@ -69,8 +69,7 @@ export default function Play({ type, table }: { type: Exclude<SessionType, 'diag
     const ses = session.current;
     if (!ses) return go({ name: 'home' });
     await finishSession(s, ses);
-    const fresh = await syncRewards(s, MONSTERS.map((m) => m.id), ses.id);
-    go({ name: 'summary', session: { ...ses }, newMonsters: fresh });
+    go({ name: 'summary', session: { ...ses } });
   }, [s, go]);
 
   const next = useCallback(() => {

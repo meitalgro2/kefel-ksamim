@@ -4,6 +4,9 @@ import * as repo from '../db/repo';
 import { AgeBand, Child } from '../engine/types';
 import { parentStats, ParentStats } from '../engine/stats';
 import { hashPin, loadChildState, ChildState, totalStars } from '../game/play';
+import { CARDS, ownedCounts } from '../game/cards';
+import { lastPracticeText, practiceSummary } from '../game/practice';
+import { PracticeChart } from '../ui/PracticeChart';
 import { Dragon, dragonById } from '../ui/art';
 import { Modal, PinPad, TopBar } from '../ui/common';
 import { InstallTip } from '../ui/InstallTip';
@@ -94,6 +97,8 @@ export default function Parent() {
 
       {data && child && (
         <>
+          <PracticeCard cs={data.cs} />
+
           <div className="card">
             <h2>למידה (לפי שליפה אמיתית)</h2>
             {!child.settings.diagnosticDone && <p className="muted">משחק הפתיחה עוד לא הושלם.</p>}
@@ -124,7 +129,7 @@ export default function Parent() {
             <h2>משחק (לא מעיד על ידע)</h2>
             <div className="kpi-grid">
               <Kpi n={totalStars(data.cs)} label="כוכבים" />
-              <Kpi n={data.cs.rewards.length} label="מפלצות באוסף" />
+              <Kpi n={`${ownedCounts(data.cs.rewards).size}/${CARDS.length}`} label="סקווישים באלבום" />
             </div>
           </div>
 
@@ -218,6 +223,24 @@ export default function Parent() {
         </Modal>
       )}
     </section>
+  );
+}
+
+function PracticeCard({ cs }: { cs: ChildState }) {
+  const now = new Date();
+  const p = practiceSummary(cs.attempts, now);
+  return (
+    <div className="card">
+      <h2>התרגול של {cs.child.nickname}</h2>
+      <p className="last-practice">אימון אחרון: <b>{lastPracticeText(p.lastPractice, now)}</b></p>
+      <div className="kpi-grid kpi-3">
+        <Kpi n={p.weekActiveDays} label="ימי תרגול מתוך 7" />
+        <Kpi n={p.weekExercises} label="תרגילים ב-7 ימים" />
+        <Kpi n={p.weekMinutes} label="דקות ב-7 ימים" />
+      </div>
+      <PracticeChart days={p.days} />
+      <p className="muted small">סה״כ מההתחלה: {p.totalExercises} תרגילים. הזמן נספר רק בזמן שעונים, בלי הפסקות ארוכות.</p>
+    </div>
   );
 }
 

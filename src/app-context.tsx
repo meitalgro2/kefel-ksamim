@@ -12,7 +12,8 @@ export type Screen =
   | { name: 'home' }
   | { name: 'map' }
   | { name: 'play'; type: Exclude<SessionType, 'diagnostic'>; table?: number }
-  | { name: 'summary'; session: Session; newMonsters: string[] }
+  | { name: 'summary'; session: Session }
+  | { name: 'bag' }
   | { name: 'collection' }
   | { name: 'parent' };
 

@@ -1,17 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useApp } from '../app-context';
-import { dueCount, totalStars, trainingDays, syncRewards } from '../game/play';
-import { Dragon, dragonById, dragonStage, MONSTERS, STAGE_NAMES, Star } from '../ui/art';
+import { dueCount, totalStars, trainingDays } from '../game/play';
+import { bagsAvailable } from '../game/cards';
+import { Dragon, dragonById, dragonStage, STAGE_NAMES, Star } from '../ui/art';
 import { TopBar } from '../ui/common';
 
 export default function Home() {
   const { st, go, reload } = useApp();
   const s = st!;
-  const [, force] = useState(0);
-  useEffect(() => {
-    // unlock anything earned in a session that was closed abruptly
-    syncRewards(s, MONSTERS.map((m) => m.id), 'sync').then((fresh) => fresh.length && force((x) => x + 1));
-  }, [s]);
   useEffect(() => {
     // returning to the app on another day: refresh due counts
     const h = () => document.visibilityState === 'visible' && reload();
@@ -25,6 +21,7 @@ export default function Home() {
   const stage = dragonStage(days);
   const dragon = dragonById(s.child.avatar_id);
   const stars = totalStars(s);
+  const bags = bagsAvailable(stars, s.sessions, s.rewards);
   const trainedToday = s.sessions.some((x) => x.type === 'daily' && x.finished_at && new Date(x.finished_at).toDateString() === now.toDateString());
 
   const message = trainedToday
@@ -60,7 +57,7 @@ export default function Home() {
         <button className="tile tile-mint" onClick={() => go({ name: 'map' })}><span className="tile-icon" aria-hidden="true">▦</span>מפת הכפולות</button>
         <button className="tile tile-sky" onClick={() => go({ name: 'play', type: 'choice_game' })}><span className="tile-icon" aria-hidden="true">◉</span>משחק בחירה</button>
         <button className="tile tile-sun" onClick={() => go({ name: 'play', type: 'typed_game' })}><span className="tile-icon" aria-hidden="true">⌨</span>משחק הקלדה</button>
-        <button className="tile tile-berry" onClick={() => go({ name: 'collection' })}><span className="tile-icon" aria-hidden="true">★</span>האוסף שלי</button>
+        <button className="tile tile-berry" onClick={() => go({ name: bags ? 'bag' : 'collection' })}>{bags > 0 && <span className="tile-badge">🎁 {bags}</span>}<span className="tile-icon" aria-hidden="true">★</span>{bags ? (bags === 1 ? 'שקית מחכה!' : 'שקיות מחכות!') : 'אלבום הסקווישים'}</button>
       </div>
       <button className="btn btn-ghost" onClick={() => go({ name: 'profiles' })}>החלפת שחקן</button>
     </section>

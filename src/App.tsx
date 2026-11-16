@@ -13,6 +13,7 @@ import Play from './screens/Play';
 import Summary from './screens/Summary';
 import Collection from './screens/Collection';
 import Parent from './screens/Parent';
+import OpenBag from './screens/OpenBag';
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>({ name: 'loading' });
@@ -74,7 +75,8 @@ export default function App() {
         {screen.name === 'home' && st && <Home />}
         {screen.name === 'map' && st && <TableMap />}
         {screen.name === 'play' && st && <Play type={screen.type} table={screen.table} />}
-        {screen.name === 'summary' && st && <Summary session={screen.session} newMonsters={screen.newMonsters} />}
+        {screen.name === 'summary' && st && <Summary session={screen.session} />}
+        {screen.name === 'bag' && st && <OpenBag />}
         {screen.name === 'collection' && st && <Collection />}
         {screen.name === 'parent' && <Parent />}
       </main>
